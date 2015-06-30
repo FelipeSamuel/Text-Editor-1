@@ -238,6 +238,62 @@ def lnupdatermouse(event):
 def current_command(event):
 	print textarea.index(CURRENT)
 
+def col_sel_end(event=None, delete=0):
+    try:
+        start_index = textarea.index("sel.first").split(".")
+        end_index = textarea.index("sel.last").split(".")
+        start_line = int(start_index[0])
+        start_char = int(start_index[1])
+        end_line = int(end_index[0])
+        end_char = int(end_index[1])
+        text = ""
+        counter = 0
+        no_of_lines = end_line - start_line + 1
+        while no_of_lines > 0:
+            start_col_sel = str(start_line + counter) + "." + str(start_char)
+            end_col_sel = str(start_line + counter) + "." + str(end_char)
+            if delete == 1:
+                textarea.delete(start_col_sel, end_col_sel)
+            else:
+                text = text + textarea.get( start_col_sel, end_col_sel ) + "\n"
+            counter = counter + 1
+            no_of_lines = no_of_lines - 1
+        return text
+    except TclError:
+        textarea.tag_delete("selection")
+        textarea.mark_set("insert", INSERT)
+        
+def col_sel_begin(event=None):
+    textarea.bind("<ButtonRelease-1>", col_sel_end)
+    textarea.tag_delete("selection")
+    try:
+        start_index = textarea.index("sel.first").split(".")
+        end_index = textarea.index("sel.last").split(".")
+        start_line = int(start_index[0])
+        start_char = int(start_index[1])
+        end_line = int(end_index[0])
+        end_char = int(end_index[1])
+        counter = 0
+        no_of_lines = end_line - start_line + 1
+        while no_of_lines > 0:
+            start_line_char = str(start_line + counter) + "." + str(start_char)
+            end_line_char = str(start_line + counter) + "." + str(end_char)
+            textarea.tag_add("selection", start_line_char, end_line_char)
+            no_of_lines = no_of_lines - 1
+            counter = counter + 1
+        textarea.tag_config("selection", background="blue", foreground="black")
+    except TclError:
+        textarea.mark_set("insert", INSERT)
+
+def column_selection():
+    if rs.get() == 1:
+        textarea.config(selectbackground="white", inactiveselectbackground="white", selectforeground="black") 
+        textarea.bind("<B1-Motion>", col_sel_begin)
+    elif rs.get() == 0:
+        textarea.unbind("<B1-Motion>")
+        textarea.unbind("<ButtonRelease-1>")
+        textarea.config(selectbackground="gray", inactiveselectbackground="white", selectforeground="black")
+
 
 window = Tk()
 window.geometry('500x500')
@@ -282,6 +338,9 @@ bbar.set(1)
 viewmenu.add_checkbutton(label = "Line and column information", onvalue = 1, offvalue = 0,variable = bbar, command = bottom_bar)
 hltln = IntVar()
 viewmenu.add_checkbutton(label = "Highlight current line", onvalue = 1, offvalue = 0, variable = hltln, command = toggle_highlight)
+rs = IntVar()
+rs.set(0)
+viewmenu.add_checkbutton(label = "Column Selection",onvalue = 1, offvalue = 0,variable = rs,command = column_selection)
 themesmenu = Menu(menubar, tearoff = 0)
 viewmenu.add_cascade(label = "Themes", menu = themesmenu)
 menubar.add_cascade(label = "View",menu = viewmenu)
@@ -323,5 +382,5 @@ window.bind('<Control-g>', current_command)
 
 window.config(menu = menubar)
 textarea.pack(expand = YES, fill = BOTH)
-window.title("Text Editor")
+window.title("ONGC Editor")
 window.mainloop()
